@@ -1,0 +1,4 @@
+/.env
+/library/migrations
+/db.sqlite3
+/migrations/__init__.py
