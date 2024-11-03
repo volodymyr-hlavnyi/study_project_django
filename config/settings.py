@@ -38,8 +38,11 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
 
 # Application definition
+MY_APP = [
+    'start.apps.StartConfig',
+]
 
-INSTALLED_APPS = [
+BASE_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -47,6 +50,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 ]
+
+INSTALLED_APPS = MY_APP + BASE_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
