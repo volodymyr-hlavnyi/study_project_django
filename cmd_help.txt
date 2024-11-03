@@ -1,0 +1,10 @@
+pip install django
+
+django-admin startproject myproject .
+
+pip install django-environ
+
+python manage.py startapp start
+python manage.py runserver
+
+pip freeze > requirements.txt
