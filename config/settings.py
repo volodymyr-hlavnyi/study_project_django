@@ -40,6 +40,7 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 # Application definition
 MY_APP = [
     'start.apps.StartConfig',
+    'library',
 ]
 
 BASE_APPS = [
