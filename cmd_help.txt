@@ -8,3 +8,5 @@ python manage.py startapp start
 python manage.py runserver
 
 pip freeze > requirements.txt
+
+python manage.py createsuperuser
