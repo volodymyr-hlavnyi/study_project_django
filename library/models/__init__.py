@@ -1,3 +1,7 @@
-from .author import Author
+from .author import Author, AuthorDetail
 from .book import Book
-from .publisher import Publisher
+from .category import Category
+from .library import Library
+from .members import Member
+from .post import Posts
+from .review import Review

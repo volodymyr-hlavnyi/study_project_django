@@ -1,7 +1,6 @@
 from django.core.validators import MaxValueValidator
 from django.db import models
 
-
 GENRE_CHOICES = [
     ('Fiction', 'Fiction'),
     ('Non-Fiction', 'Non-Fiction'),
@@ -35,4 +34,20 @@ class Book(models.Model):
     page_count = models.IntegerField(null=True, verbose_name='Page Count')
     validators = [MaxValueValidator(10000)]
 
-    publisher_id = models.ForeignKey('Publisher', null=True, on_delete=models.CASCADE, verbose_name='Publisher')
+    publisher_id = models.ForeignKey('Member', null=True, on_delete=models.CASCADE, verbose_name='Member(publisher)')
+
+    category = models.ForeignKey('Category', null=True, on_delete=models.SET_NULL,
+                                 related_name='books', verbose_name='Category')
+
+    libraries = models.ManyToManyField('Library', related_name='books', verbose_name='Libraries')
+
+    @property
+    def rating(self):
+        reviews = self.reviews.all()
+
+        total_reviews = reviews.count()
+        if total_reviews == 0:
+            return 0
+        total_rating = sum(review.rating for review in reviews)
+        average_rating = total_rating / total_reviews
+        return round(average_rating, 2)
