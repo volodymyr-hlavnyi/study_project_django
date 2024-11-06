@@ -41,6 +41,7 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 MY_APP = [
     'start.apps.StartConfig',
     'library',
+    'task',
 ]
 
 BASE_APPS = [
@@ -50,6 +51,7 @@ BASE_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
 ]
 
 INSTALLED_APPS = MY_APP + BASE_APPS
