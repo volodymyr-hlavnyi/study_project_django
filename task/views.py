@@ -6,14 +6,19 @@ from rest_framework import filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
+from rest_framework import viewsets
+from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Task, SubTask
+from .models import Task, SubTask, Category
 from .serializers import (
     TaskCreateSerializer,
-    SubTaskSerializer,
     SubTaskCreateSerializer,
-    TaskSerializer)
+    TaskSerializer,
+    CategoryCreateSerializer
+)
 from django.db.models import Count, Q
+# task/pagination.py
+from rest_framework.pagination import PageNumberPagination
 
 
 class TaskCreateView(APIView):
@@ -102,3 +107,14 @@ class SubTaskDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
 class TaskDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskCreateSerializer
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategoryCreateSerializer
+
+    @action(detail=True, methods=['get'])
+    def count_tasks(self, request, pk=None):
+        category = self.get_object()
+        task_count = Task.objects.filter(category=category).count()
+        return Response({'task_count': task_count})
