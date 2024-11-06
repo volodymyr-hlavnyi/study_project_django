@@ -4,15 +4,13 @@ from .views import (
     TaskListView,
     TaskStatsView,
     SubTaskListCreateView,
-    SubTaskDetailUpdateDeleteView
+    SubTaskDetailUpdateDeleteView, TaskListCreateView, TaskDetailUpdateDeleteView
 )
 
 urlpatterns = [
-    path('create/', TaskCreateView.as_view(), name='task-create'),
-    path('list/', TaskListView.as_view(), name='task-list'),
+    path('tasks/', TaskListCreateView.as_view(), name='task-list-create'),
+    path('tasks/<int:pk>/', TaskDetailUpdateDeleteView.as_view(), name='task-detail-update-delete'),
     path('stats/', TaskStatsView.as_view(), name='task-stats'),
-
     path('subtasks/', SubTaskListCreateView.as_view(), name='subtask-list-create'),
-    path('subtasks/<int:pk>/', SubTaskDetailUpdateDeleteView.as_view(), name='subtask-detail-update-delete')
-
+    path('subtasks/<int:pk>/', SubTaskDetailUpdateDeleteView.as_view(), name='subtask-detail-update-delete'),
 ]

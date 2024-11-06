@@ -2,14 +2,17 @@ from django.utils import timezone
 
 from rest_framework import status
 from rest_framework import generics
+from rest_framework import filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import Task, SubTask
 from .serializers import (
-    TaskSerializer,
+    TaskCreateSerializer,
     SubTaskSerializer,
-    SubTaskCreateSerializer)
+    SubTaskCreateSerializer,
+    TaskSerializer)
 from django.db.models import Count, Q
 
 
@@ -20,6 +23,17 @@ class TaskCreateView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TaskListCreateView(generics.ListCreateAPIView):
+    queryset = Task.objects.all()
+    serializer_class = TaskCreateSerializer
+    pagination_class = PageNumberPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status', 'deadline']
+    search_fields = ['title', 'description']
+    ordering_fields = ['created_at']
+    ordering = ['-created_at']
 
 
 class TaskListView(generics.ListAPIView):
@@ -51,21 +65,40 @@ class TaskStatsView(APIView):
         return Response(stats)
 
 
+# class SubTaskListCreateView(generics.ListCreateAPIView):
+#     queryset = SubTask.objects.all()
+#     serializer_class = SubTaskCreateSerializer
+#
+#     def get_serializer_class(self):
+#         if self.request.method == 'POST':
+#             return SubTaskCreateSerializer
+#         return SubTaskSerializer
+
 class SubTaskListCreateView(generics.ListCreateAPIView):
     queryset = SubTask.objects.all()
     serializer_class = SubTaskCreateSerializer
+    pagination_class = PageNumberPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status', 'deadline']
+    search_fields = ['title', 'description']
+    ordering_fields = ['created_at']
+    ordering = ['-created_at']
 
-    def get_serializer_class(self):
-        if self.request.method == 'POST':
-            return SubTaskCreateSerializer
-        return SubTaskSerializer
 
+# class SubTaskDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+#     queryset = SubTask.objects.all()
+#     serializer_class = SubTaskCreateSerializer
+#
+#     def get_serializer_class(self):
+#         if self.request.method in ['PUT', 'PATCH']:
+#             return SubTaskCreateSerializer
+#         return SubTaskSerializer
 
 class SubTaskDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = SubTask.objects.all()
     serializer_class = SubTaskCreateSerializer
 
-    def get_serializer_class(self):
-        if self.request.method in ['PUT', 'PATCH']:
-            return SubTaskCreateSerializer
-        return SubTaskSerializer
+
+class TaskDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Task.objects.all()
+    serializer_class = TaskCreateSerializer
