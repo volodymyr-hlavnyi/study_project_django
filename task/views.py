@@ -5,8 +5,11 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
-from .models import Task
-from .serializers import TaskSerializer
+from .models import Task, SubTask
+from .serializers import (
+    TaskSerializer,
+    SubTaskSerializer,
+    SubTaskCreateSerializer)
 from django.db.models import Count, Q
 
 
@@ -46,3 +49,23 @@ class TaskStatsView(APIView):
             'overdue_tasks': overdue_tasks
         }
         return Response(stats)
+
+
+class SubTaskListCreateView(generics.ListCreateAPIView):
+    queryset = SubTask.objects.all()
+    serializer_class = SubTaskCreateSerializer
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return SubTaskCreateSerializer
+        return SubTaskSerializer
+
+
+class SubTaskDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = SubTask.objects.all()
+    serializer_class = SubTaskCreateSerializer
+
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return SubTaskCreateSerializer
+        return SubTaskSerializer
