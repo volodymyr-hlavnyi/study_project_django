@@ -41,6 +41,9 @@ class Book(models.Model):
 
     libraries = models.ManyToManyField('Library', related_name='books', verbose_name='Libraries')
 
+    def __str__(self):
+        return self.title
+
     @property
     def rating(self):
         reviews = self.reviews.all()
