@@ -1,20 +1,24 @@
 from django.utils import timezone
 from rest_framework import serializers
 from .models import Task, SubTask, Category
+from django.contrib.auth.models import User
 
 
 class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
-        fields = ['title', 'description', 'status', 'deadline']
+        # fields = ['title', 'description', 'status', 'deadline']
+        fields = '__all__'
 
 
 class SubTaskCreateSerializer(serializers.ModelSerializer):
+    owner = serializers.ReadOnlyField(source='owner.username')
     created_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = SubTask
-        fields = ['title', 'description', 'task', 'status', 'deadline', 'created_at']
+        # fields = ['title', 'description', 'task', 'status', 'deadline', 'created_at']
+        fields = ['id', 'owner', 'task', 'title', 'description', 'status', 'deadline', 'created_at']
 
 
 class CategoryCreateSerializer(serializers.ModelSerializer):
@@ -57,11 +61,29 @@ class TaskDetailSerializer(serializers.ModelSerializer):
 
 
 class TaskCreateSerializer(serializers.ModelSerializer):
+    owner = serializers.ReadOnlyField(source='owner.username')
+
     class Meta:
         model = Task
-        fields = ['title', 'description', 'status', 'deadline']
+        fields = ['title', 'owner', 'description', 'status', 'deadline']
 
     def validate_deadline(self, value):
         if value < timezone.now():
             raise serializers.ValidationError("The deadline cannot be in the past.")
         return value
+
+
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'password', 'email']
+
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            password=validated_data['password'],
+            email=validated_data.get('email', '')
+        )
+        return user
