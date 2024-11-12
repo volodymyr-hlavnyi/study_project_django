@@ -20,6 +20,12 @@ class Task(models.Model):
     def __str__(self):
         return self.title
 
+    class Meta:
+        db_table = 'task_manager_task'
+        ordering = ['-created_at']
+        verbose_name = 'Task'
+        unique_together = ['title']
+
 
 class SubTask(models.Model):
     title = models.CharField(max_length=255, verbose_name='Title')
@@ -30,4 +36,10 @@ class SubTask(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created At')
 
     def __str__(self):
-        return self.title
+        return f"{self.title} {self.task.title}"
+
+    class Meta:
+        db_table = 'task_manager_subtask'
+        ordering = ['-created_at']
+        verbose_name = 'SubTask'
+        unique_together = ['title']

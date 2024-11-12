@@ -5,3 +5,8 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        db_table = 'task_manager_category'
+        verbose_name = 'Category'
+        unique_together = ['name']
