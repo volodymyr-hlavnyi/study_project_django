@@ -18,9 +18,11 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from task.urls import router as task_router
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('start.urls')),
     path('task/', include('task.urls')),
+    path('',include(task_router.urls)),
 ]
