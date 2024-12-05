@@ -20,6 +20,8 @@ from django.db.models import Count, Q
 # task/pagination.py
 from rest_framework.pagination import PageNumberPagination
 
+from .permissions import IsAuthenticatedOrReadOnly
+
 
 class TaskCreateView(APIView):
     def post(self, request, *args, **kwargs):
@@ -39,6 +41,7 @@ class TaskListCreateView(generics.ListCreateAPIView):
     search_fields = ['title', 'description']
     ordering_fields = ['created_at']
     ordering = ['-created_at']
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 
 class TaskListView(generics.ListAPIView):
@@ -107,6 +110,7 @@ class SubTaskDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
 class TaskDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskCreateSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
