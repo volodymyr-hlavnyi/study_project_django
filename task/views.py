@@ -1,3 +1,6 @@
+from datetime import datetime
+
+from django.contrib.auth import authenticate
 from django.utils import timezone
 
 from rest_framework import status
@@ -6,21 +9,24 @@ from rest_framework import filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny, DjangoModelPermissions
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework_simplejwt.tokens import RefreshToken
+
 from .models import Task, SubTask, Category
 from .serializers import (
     TaskCreateSerializer,
     SubTaskCreateSerializer,
     TaskSerializer,
-    CategoryCreateSerializer
+    CategoryCreateSerializer, RegisterSerializer, SubTaskSerializer
 )
 from django.db.models import Count, Q
 # task/pagination.py
 from rest_framework.pagination import PageNumberPagination
 
-from .permissions import IsAuthenticatedOrReadOnly
+from .permissions import IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly
 
 
 class TaskCreateView(APIView):
@@ -42,6 +48,9 @@ class TaskListCreateView(generics.ListCreateAPIView):
     ordering_fields = ['created_at']
     ordering = ['-created_at']
     permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
 class TaskListView(generics.ListAPIView):
@@ -92,6 +101,9 @@ class SubTaskListCreateView(generics.ListCreateAPIView):
     ordering_fields = ['created_at']
     ordering = ['-created_at']
 
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
 
 # class SubTaskDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
 #     queryset = SubTask.objects.all()
@@ -105,12 +117,13 @@ class SubTaskListCreateView(generics.ListCreateAPIView):
 class SubTaskDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = SubTask.objects.all()
     serializer_class = SubTaskCreateSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
 
 
 class TaskDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskCreateSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -122,3 +135,97 @@ class CategoryViewSet(viewsets.ModelViewSet):
         category = self.get_object()
         task_count = Task.objects.filter(category=category).count()
         return Response({'task_count': task_count})
+
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        user = authenticate(request, username=username, password=password)
+
+        if user:
+            response = Response(status=status.HTTP_200_OK)
+            set_jwt_cookies(response, user)
+            return response
+        else:
+            return Response({"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class LogoutView(APIView):
+    def post(self, request, *args, **kwargs):
+        response = Response(status=status.HTTP_204_NO_CONTENT)
+        response.delete_cookie('access_token')
+        response.delete_cookie('refresh_token')
+        return response
+
+
+class RegisterView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            response = Response({
+                'user': {
+                    'username': user.username,
+                    'email': user.email
+                }
+            }, status=status.HTTP_201_CREATED)
+            set_jwt_cookies(response, user)
+            return response
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PrivateView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        return Response({"message": f"Hello, Admin! {request.user.username}!"})
+
+
+def set_jwt_cookies(response, user):
+    refresh = RefreshToken.for_user(user)
+    access_token = refresh.access_token
+
+    # Используем exp для установки времени истечения куки
+    access_expiry = datetime.utcfromtimestamp(access_token['exp'])
+    refresh_expiry = datetime.utcfromtimestamp(refresh['exp'])
+
+    response.set_cookie(
+        key='access_token',
+        value=str(access_token),
+        httponly=True,
+        secure=False,  # Используйте True для HTTPS
+        samesite='Lax',
+        expires=access_expiry
+    )
+    response.set_cookie(
+        key='refresh_token',
+        value=str(refresh),
+        httponly=True,
+        secure=False,
+        samesite='Lax',
+        expires=refresh_expiry
+    )
+
+
+class UserTaskListView(generics.ListAPIView):
+    serializer_class = TaskSerializer
+    pagination_class = PageNumberPagination
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Task.objects.filter(owner=self.request.user)
+
+
+class UserSubTaskListView(generics.ListAPIView):
+    serializer_class = SubTaskSerializer
+    pagination_class = PageNumberPagination
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return SubTask.objects.filter(owner=self.request.user)
